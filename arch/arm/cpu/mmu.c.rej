@@ -1,0 +1,21 @@
+--- arch/arm/cpu/mmu.c	2015-11-02 19:57:18.111215933 -0800
++++ arch/arm/cpu/mmu.c	2015-10-06 07:09:31.000000000 -0700
+@@ -215,7 +215,7 @@
+ 	unsigned long phys = (unsigned long)bank->start;
+ 	unsigned long ttb_start = phys >> 20;
+ 	unsigned long ttb_end = (phys >> 20) + (bank->size >> 20);
+-	unsigned long num_ptes = bank->size >> 12;
++	unsigned long num_ptes = bank->size >> 10;
+ 	int i, pte;
+ 	u32 *ptes;
+ 
+@@ -248,8 +248,7 @@
+ 	}
+ 
+ 	dma_flush_range((unsigned long)ttb, (unsigned long)ttb + 0x4000);
+-	dma_flush_range((unsigned long)ptes,
+-			(unsigned long)ptes + num_ptes * sizeof(u32));
++	dma_flush_range((unsigned long)ptes, num_ptes * sizeof(u32));
+ 
+ 	tlb_invalidate();
+ 

@@ -1,0 +1,10 @@
+--- arch/arm/boards/Makefile	2015-11-02 19:57:17.899214879 -0800
++++ arch/arm/boards/Makefile	2015-10-29 19:09:36.117167887 -0700
+@@ -17,6 +17,7 @@
+ obj-$(CONFIG_MACH_CM_FX6)			+= cm-fx6/
+ obj-$(CONFIG_MACH_NITROGEN6X)			+= boundarydevices-nitrogen6x/
+ obj-$(CONFIG_MACH_CCMX51)			+= ccxmx51/
++obj-$(CONFIG_MACH_CCWMX53)          += ccwmx53/
+ obj-$(CONFIG_MACH_CFA10036)			+= crystalfontz-cfa10036/
+ obj-$(CONFIG_MACH_CHUMBY)			+= chumby_falconwing/
+ obj-$(CONFIG_MACH_CLEP7212)			+= clep7212/

@@ -1,0 +1,12 @@
+--- arch/arm/mach-imx/clocksource.c	2015-11-02 19:57:18.191216334 -0800
++++ arch/arm/mach-imx/clocksource.c	2015-10-06 07:09:31.000000000 -0700
+@@ -141,9 +141,6 @@
+ 		.compatible = "fsl,imx31-gpt",
+ 		.data = &regs_imx31,
+ 	}, {
+-		.compatible = "fsl,imx6q-gpt",
+-		.data = &regs_imx31,
+-	}, {
+ 		/* sentinel */
+ 	}
+ };
