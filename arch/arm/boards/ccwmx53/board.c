@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2007 Sascha Hauer, Pengutronix
  * Copyright (C) 2011 Marc Kleine-Budde <mkl@pengutronix.de>
- * Copyright (C) 2015 Jason Cobham <jcobham@questertangent.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -37,10 +36,33 @@
 #include <mach/imx-nand.h>
 #include <mach/iim.h>
 #include <mach/imx5.h>
+#include <mach/esdctl.h>
 
 #include <asm/armlinux.h>
 #include <io.h>
 #include <asm/mmu.h>
+#include "ccwmx53.h"
+
+static struct ccwmx53_ident ccwmx53_ids[] = {
+/* 0x00 - 5500xxxx-xx */	{ "Unknown",						         			0,			0,		0,		0,      0},
+/* 0x01 - 5500xxxx-xx */	{ "Not supported",					         			0,			0,		0,		0,      0},
+/* 0x02 - 55001604-01 */	{ "i.MX535@1000MHz, Wireless, PHY, Ext. Eth, Accel",	SZ_512M,	0,		1,		1, 		1},
+/* 0x03 - 55001605-01 */	{ "i.MX535@1000MHz, PHY, Accel",						SZ_512M,	0,		1,		0,		0},
+/* 0x04 - 55001604-02 */	{ "i.MX535@1000MHz, Wireless, PHY, Ext. Eth, Accel",	SZ_512M,	0,		1,		1,		1},
+/* 0x05 - 5500xxxx-xx */	{ "i.MX535@1000MHz, PHY, Ext. Eth, Accel",				SZ_512M,	0,		1,		1,		0},
+/* 0x06 - 55001604-03 */	{ "i.MX535@1000MHz, Wireless, PHY, Accel",				SZ_512M,	0,		1,		0,		1},
+/* 0x07 - 5500xxxx-xx */	{ "i.MX535@1000MHz, PHY, Accel",						SZ_512M,	0,		1,		0,		0},
+/* 0x08 - 55001604-04 */	{ "i.MX537@800MHz, Wireless, PHY, Accel",				SZ_512M,	1,		1,		0,		1},
+/* 0x09 - 55001605-02 */	{ "i.MX537@800MHz, PHY, Accel",							SZ_512M,	1,		1,		0,		0},
+/* 0x0a - 5500xxxx-xx */	{ "i.MX537@800MHz, Wireless, PHY, Ext. Eth, Accel",		SZ_512M,	1,		1,		1,		1},
+/* 0x0b - 55001605-03 */	{ "i.MX537@800MHz, PHY, Ext. Eth, Accel",				SZ_1G,		1,		1,		1,		0},
+/* 0x0c - 5500xxxx-xx */	{ "Reserved for future use",				        	0,     		0,      0,		0,	    0},
+/* 0x0d - 55001605-05 */	{ "i.MX537@800MHz, PHY, Accel",							SZ_1G,		1,  	1,		0,		0},
+/* 0x0e - 5500xxxx-xx */	{ "Reserved for future use",				         	0,     		0,      0,   	0,		0},
+/* 0x0f - 5500xxxx-xx */	{ "Reserved for future use",				        	0,     		0,      0,		0,	    0},
+};
+
+struct ccwmx53_ident *ccwmx53_id;
 
 static struct fec_platform_data fec_info = {
 	.xcv_type = PHY_INTERFACE_MODE_RMII,
@@ -73,9 +95,9 @@ static iomux_v3_cfg_t ccwmx53_pads[] = {
 	MX53_PAD_SD2_DATA2__ESDHC2_DAT2,
 	MX53_PAD_SD2_DATA3__ESDHC2_DAT3,
 	/* SD2_CD */
-	MX53_PAD_EIM_DA13__GPIO3_13,
+	MX53_PAD_GPIO_4__GPIO1_4,
 	/* SD2_WP */
-	MX53_PAD_KEY_ROW2__GPIO4_11,
+	MX53_PAD_GPIO_2__GPIO1_2,
 
 	/* SD3 */
 	MX53_PAD_PATA_DATA8__ESDHC3_DAT0,
@@ -115,7 +137,6 @@ static iomux_v3_cfg_t ccwmx53_pads[] = {
 	MX53_PAD_NANDF_RB0__EMI_NANDF_RB_0,
 };
 
-
 #define ccwmx53_FEC_PHY_RST		IMX_GPIO_NR(7, 6)
 
 static void ccwmx53_fec_reset(void)
@@ -125,24 +146,9 @@ static void ccwmx53_fec_reset(void)
 	gpio_set_value(ccwmx53_FEC_PHY_RST, 1);
 }
 
-static int ccwmx53_late_init(void)
-{
-
-	/* Enable PMIC 3.3V reg */
-	//struct da9053_priv *_da9053;
-	//da9053_reg_read(_da9053, 0x19, 0xfa);
-	
-	return 0;
-}
-
-#define LOCO_SD2_CD			0//IMX_GPIO_NR(3, 13)
-#define LOCO_SD2_WP			0//IMX_GPIO_NR(4, 11)
-
 static struct esdhc_platform_data sd2_data = {
-	//.cd_gpio = LOCO_SD2_CD,
-	//.wp_gpio = LOCO_SD2_WP,
-	.cd_type = ESDHC_CD_PERMANENT,	//ESDHC_CD_GPIO,
-	.wp_type = ESDHC_WP_NONE,	//ESDHC_WP_GPIO,
+	.cd_type = IMX_GPIO_NR(1, 4),
+	.wp_type = IMX_GPIO_NR(1, 2),
 };
 
 static struct esdhc_platform_data sd3_data = {
@@ -152,27 +158,77 @@ static struct esdhc_platform_data sd3_data = {
 
 struct imx_nand_platform_data nand_info = {
 	.width		= 1,
-	.hw_ecc		= 0,
+	.hw_ecc		= 1,
 	.flash_bbt	= 1,
 };
 
-static struct i2c_board_info i2c_devices[] = {
-	{
-		I2C_BOARD_INFO("da9053-i2c", 0x68),
-	},
- };
+/*
+ * On this board the SDRAM is always configured for 512Mib. The real
+ * size is determined by the board id read from the IIM module.
+ */
+static int ccxmx53_sdram_fixup(void)
+{
+	imx_esdctl_disable();
+
+	return 0;
+}
+postcore_initcall(ccxmx53_sdram_fixup);
+
+static int ccxmx53_memory0_init(void)
+{
+	arm_add_mem_device("ram0", MX53_CSD0_BASE_ADDR, SZ_512M);
+
+	return 0;
+}
+mem_initcall(ccxmx53_memory0_init);	
 
 static int ccwmx53_devices_init(void)
 {
+	u8 hwid[6] = {0};
+	char manloc = 0;
+
+	if ((imx_iim_read(1, 9, hwid, sizeof(hwid)) != sizeof(hwid)) || (hwid[0] < 0x02) || (hwid[0] >= ARRAY_SIZE(ccwmx53_ids)))
+	{
+		printf("Module Variant: Unknown (0x%02x) (0x%02x) (0x%02x) (0x%02x) (0x%02x) (0x%02x)\n", hwid[0],hwid[1],hwid[2],hwid[3],hwid[4],hwid[5]);
+		memset(hwid, 0x00, sizeof(hwid));
+	}
+	
+	ccwmx53_id = &ccwmx53_ids[hwid[0]];
+	printf("Module Variant: %s (0x%02x)\n", ccwmx53_id->id_string, hwid[0]);
+
+	if (hwid[0]) {
+		printf("Module HW Rev : %02x\n", hwid[1] + 1);
+		switch (hwid[2] & 0xc0) {
+		case 0x00:
+			manloc = 'B';
+			break;
+		case 0x40:
+			manloc = 'W';
+			break;
+		case 0x80:
+			manloc = 'S';
+			break;
+		default:
+			manloc = 'N';
+			break;
+		}
+		printf("Module Serial : %c%d\n", manloc, ((hwid[2] & 0x3f) << 24) | (hwid[3] << 16) | (hwid[4] << 8) | hwid[5]);
+		if ((ccwmx53_id->mem_sz - SZ_128M) > 0)
+		{
+			printf("Module RAM    : %d\n", ccwmx53_id->mem_sz);
+			arm_add_mem_device("ram0", MX53_CSD0_BASE_ADDR, ccwmx53_id->mem_sz);
+		}
+	} else {
+		return -ENOSYS;
+	}
+	
 	imx53_iim_register_fec_ethaddr();
 	imx53_add_fec(&fec_info);
 	imx53_add_mmc2(&sd2_data);
 	imx53_add_mmc1(&sd3_data);
 	imx53_add_i2c2(NULL);
-	i2c_register_board_info(2, i2c_devices, ARRAY_SIZE(i2c_devices));
-	//imx53_add_nand(&nand_info);
+	imx53_add_nand(&nand_info);
 	imx53_add_sata();
-	
 	ccwmx53_fec_reset();
 
 	armlinux_set_architecture(MACH_TYPE_CCWMX53);
@@ -181,9 +237,42 @@ static int ccwmx53_devices_init(void)
 }
 device_initcall(ccwmx53_devices_init);
 
-static int ccwmx53_part_init(void)
+static int ccwmx53_late_init(void)
 {
 
+	unsigned char value = 0;
+	struct i2c_adapter *adapter = NULL;
+	struct i2c_client client;
+	int addr = -1, bus = 0;
+
+	/* I2C2 bus */
+	bus = 2;
+
+	/* da9053 device address is 0x68 */
+	addr = 0x68;
+
+	adapter = i2c_get_adapter(bus);
+	if (!adapter){
+		printf("****No I2C Adapter\n");
+		return -ENODEV;
+	}
+	
+	client.adapter = adapter;
+	client.addr = addr;
+
+	/* Enable 3.3V ext regulator */
+	value = 0xfa;
+	if (i2c_write_reg(&client, 0x19, &value, 1) < 0){
+		printf("****I2C write failed\n");
+		return -ENOSYS;
+	}
+		
+	return 0;
+}
+late_initcall(ccwmx53_late_init);
+
+static int ccwmx53_part_init(void)
+{
 	const char *envdev;
 
 	switch (bootsource_get()) {
@@ -206,9 +295,6 @@ static int ccwmx53_part_init(void)
 
 	return 0;
 }
-late_initcall(ccwmx53_late_init);
-
-/* Configure env partitions */
 late_initcall(ccwmx53_part_init);
 	
 static int ccwmx53_console_init(void)
