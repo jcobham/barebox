@@ -91,7 +91,7 @@ static inline unsigned long imx_v2_sdram_size(void __iomem *esdctlbase, int num)
 	void __iomem *esdctl = esdctlbase + (num ? IMX_ESDCTL1 : IMX_ESDCTL0);
 	u32 ctlval = readl(esdctl);
 	unsigned long size;
-	int rows, cols, width = 2, banks = 4;
+	int rows, cols, width = 2, banks = 8;
 
 	if (!(ctlval & ESDCTL0_SDE))
 		/* SDRAM controller disabled, so no RAM here */
