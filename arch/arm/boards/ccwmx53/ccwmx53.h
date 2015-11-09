@@ -18,7 +18,7 @@ struct ccwmx53_hwid {
 	u8		variant;
 	u8		version;
 	u32		sn;
-	char		mloc;
+	char	mloc;
 };
 
 struct ccwmx53_ident {

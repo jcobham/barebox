@@ -162,12 +162,6 @@ struct imx_nand_platform_data nand_info = {
 	.flash_bbt	= 1,
 };
 
-static struct i2c_board_info i2c_devices[] = {
-	{
-		I2C_BOARD_INFO("da9053-i2c", 0x68),
-	},
-};
-
 /*
  * On this board the SDRAM is always configured for 512Mib. The real
  * size is determined by the board id read from the IIM module.
@@ -233,7 +227,6 @@ static int ccwmx53_devices_init(void)
 	imx53_add_mmc2(&sd2_data);
 	imx53_add_mmc1(&sd3_data);
 	imx53_add_i2c2(NULL);
-	i2c_register_board_info(2, i2c_devices, ARRAY_SIZE(i2c_devices));
 	imx53_add_nand(&nand_info);
 	imx53_add_sata();
 	ccwmx53_fec_reset();
@@ -260,7 +253,7 @@ static int ccwmx53_late_init(void)
 
 	adapter = i2c_get_adapter(bus);
 	if (!adapter){
-		printf("****No Adapter\n");
+		printf("****No I2C Adapter\n");
 		return -ENODEV;
 	}
 	
@@ -270,7 +263,7 @@ static int ccwmx53_late_init(void)
 	/* Enable 3.3V ext regulator */
 	value = 0xfa;
 	if (i2c_write_reg(&client, 0x19, &value, 1) < 0){
-		printf("****write failed\n");
+		printf("****I2C write failed\n");
 		return -ENOSYS;
 	}
 		
