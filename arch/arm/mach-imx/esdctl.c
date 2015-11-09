@@ -137,7 +137,7 @@ static inline unsigned long imx_v4_sdram_size(void __iomem *esdctlbase, int cs)
 	u32 ctlval = readl(esdctlbase + ESDCTL_V4_ESDCTL0);
 	u32 esdmisc = readl(esdctlbase + ESDCTL_V4_ESDMISC);
 	unsigned long size;
-	int rows, cols, width = 2, banks = 8;
+	int rows, cols, width = 2, banks = 4;
 
 	if (cs == 0 && !(ctlval & ESDCTL_V4_ESDCTLx_SDE0))
 		return 0;

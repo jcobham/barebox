@@ -27,6 +27,7 @@ config ARCH_TEXT_BASE
 	default 0x7ff00000 if MACH_TQMA53
 	default 0x97f00000 if MACH_TX51
 	default 0x97f00000 if MACH_CCMX51
+	default 0x7ff00000 if MACH_CCWMX53
 	default 0x4fc00000 if MACH_SABRELITE
 	default 0x8fe00000 if MACH_TX53
 	default 0x97f00000 if MACH_EFIKA_MX_SMARTBOOK
@@ -536,6 +537,17 @@ config MACH_FREESCALE_MX53_SMD
 	bool "Freescale i.MX53 SMD"
 	select ARCH_IMX53
 
+config MACH_CCWMX53
+	bool "ConnectCore i.MX53"
+	select ARCH_IMX53
+	select IMX_IIM
+	select I2C
+	select DRIVER_I2C_IMX
+	select MFD_DA9053
+	help
+	  Say Y here if you are using Digi ConnectCore (W)i-i.MX53
+	  equipped with a Freescale i.MX53 Processor
+	  
 config MACH_TX53
 	bool "Ka-Ro TX53"
 	select ARCH_IMX53
